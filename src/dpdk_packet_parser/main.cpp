@@ -145,6 +145,9 @@ int main(int argc, char *argv[]){
     argc -= ret;
     argv += ret;
 
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
     if (argc < 1)
         rte_exit(EXIT_FAILURE, "Invalid number of arguments.\n");
 
@@ -221,5 +224,14 @@ int main(int argc, char *argv[]){
             rte_pktmbuf_free(mbufs[i]);
         }
     }
+
+    rte_eth_dev_stop(portid);
+    rte_eth_dev_close(portid);
+    rte_mempool_free(mbuf_pool);
+
+    // 清理 EAL 资源
+    rte_eal_cleanup();
+    printf("Bye...\n");
+
     return 0;
 }
