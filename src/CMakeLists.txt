@@ -1,3 +1,4 @@
 add_subdirectory(helloworld)
 add_subdirectory(l3fwd)
 add_subdirectory(countmin)
+add_subdirectory(test_cm_sketch)

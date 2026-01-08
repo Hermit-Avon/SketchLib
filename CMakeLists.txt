@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(/usr/local/share/dpdk/examples/common/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 find_package(PkgConfig REQUIRED QUIET)
 
