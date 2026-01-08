@@ -33,6 +33,7 @@
 
 #include <signal.h>
 #include "FlowKey.h"
+#include "CountMin.h"
 
 #define BURST_SIZE 32
 
@@ -174,6 +175,7 @@ int main(int argc, char *argv[]){
     printf("start to recveve data!\n");
 
     FiveTuple ft;
+    CountMin<FiveTuple> cm(4, 2048);
     while(!force_quit){
         struct rte_mbuf *mbufs[BURST_SIZE];
         struct rte_ether_hdr *eth_hdr;
@@ -218,6 +220,8 @@ int main(int argc, char *argv[]){
             ft.src_port = sp;
             ft.dst_port = dp;
             ft.protocol = proto_id;
+
+            cm.update(ft, 1);
         }
 
         for (uint16_t i = 0; i < num_recv; i++){
