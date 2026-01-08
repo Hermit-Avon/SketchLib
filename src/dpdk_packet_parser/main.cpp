@@ -34,6 +34,13 @@
 #include <signal.h>
 #include "FlowKey.h"
 #include "CountMin.h"
+#include "CountSketch.h"
+#include "ElasticSketch.h"
+#include "FlowRadar.h"
+#include "HashPipe.h"
+#include "MVSketch.h"
+#include "SketchLearn.h"
+#include "UnivMon.h"
 
 #define BURST_SIZE 32
 
@@ -172,12 +179,30 @@ int main(int argc, char *argv[]){
         printf("port init error!\n");
     }
 
-    printf("start to recveve data!\n");
+    printf("start to receive data!\n");
 
     FiveTuple ft;
-    CountMin<FiveTuple> cm(4, 2048);
 
-    uint64_t total_cycles = 0;
+    // Allocate sufficient memory to avoid division by zero (especially for SketchLearn which creates many layers)
+    uint64_t memory_1mb = 1024 * 1024;
+    
+    CountMin<FiveTuple> cm(4, memory_1mb);
+    CountSketch<FiveTuple> cs(4, memory_1mb);
+    ElasticSketch<FiveTuple> es(memory_1mb / 8, 1, memory_1mb, 4);
+    FlowRadar<FiveTuple> fr(memory_1mb);
+    HashPipe<FiveTuple> hp(memory_1mb, 4);
+    MVSketch<FiveTuple> mv(4, memory_1mb);
+    SketchLearn<FiveTuple> sl(memory_1mb, 4);
+    UnivMon<FiveTuple> um(4, memory_1mb);
+
+    uint64_t total_cycles_cm = 0;
+    uint64_t total_cycles_cs = 0;
+    uint64_t total_cycles_es = 0;
+    uint64_t total_cycles_fr = 0;
+    uint64_t total_cycles_hp = 0;
+    uint64_t total_cycles_mv = 0;
+    uint64_t total_cycles_sl = 0;
+    uint64_t total_cycles_um = 0;
     uint64_t total_pkts = 0;
 
     while(!force_quit){
@@ -225,10 +250,48 @@ int main(int argc, char *argv[]){
             ft.dst_port = dp;
             ft.protocol = proto_id;
 
-            uint64_t start = rte_rdtsc();
+            uint64_t start, end;
+
+            start = rte_rdtsc();
             cm.update(ft, 1);
-            uint64_t end = rte_rdtsc();
-            total_cycles += (end - start);
+            end = rte_rdtsc();
+            total_cycles_cm += (end - start);
+
+            start = rte_rdtsc();
+            cs.update(ft, 1);
+            end = rte_rdtsc();
+            total_cycles_cs += (end - start);
+
+            start = rte_rdtsc();
+            es.update(ft, 1);
+            end = rte_rdtsc();
+            total_cycles_es += (end - start);
+
+            start = rte_rdtsc();
+            fr.update(ft, 1);
+            end = rte_rdtsc();
+            total_cycles_fr += (end - start);
+
+            start = rte_rdtsc();
+            hp.update(ft, 1);
+            end = rte_rdtsc();
+            total_cycles_hp += (end - start);
+
+            start = rte_rdtsc();
+            mv.update(ft, 1);
+            end = rte_rdtsc();
+            total_cycles_mv += (end - start);
+
+            start = rte_rdtsc();
+            sl.update(ft, 1);
+            end = rte_rdtsc();
+            total_cycles_sl += (end - start);
+
+            start = rte_rdtsc();
+            um.update(ft, 1);
+            end = rte_rdtsc();
+            total_cycles_um += (end - start);
+
             total_pkts++;
         }
 
@@ -239,7 +302,14 @@ int main(int argc, char *argv[]){
 
     if (total_pkts > 0) {
         printf("\nTotal packets processed: %" PRIu64 "\n", total_pkts);
-        printf("Average CPU cycles per update: %.2f\n", (double)total_cycles / total_pkts);
+        printf("Average CPU cycles per update (CountMin):     %.2f\n", (double)total_cycles_cm / total_pkts);
+        printf("Average CPU cycles per update (CountSketch):  %.2f\n", (double)total_cycles_cs / total_pkts);
+        printf("Average CPU cycles per update (ElasticSketch):%.2f\n", (double)total_cycles_es / total_pkts);
+        printf("Average CPU cycles per update (FlowRadar):    %.2f\n", (double)total_cycles_fr / total_pkts);
+        printf("Average CPU cycles per update (HashPipe):     %.2f\n", (double)total_cycles_hp / total_pkts);
+        printf("Average CPU cycles per update (MVSketch):     %.2f\n", (double)total_cycles_mv / total_pkts);
+        printf("Average CPU cycles per update (SketchLearn):  %.2f\n", (double)total_cycles_sl / total_pkts);
+        printf("Average CPU cycles per update (UnivMon):      %.2f\n", (double)total_cycles_um / total_pkts);
     }
 
     rte_eth_dev_stop(portid);
