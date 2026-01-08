@@ -54,3 +54,22 @@ sudo dpdk-devbind.py -b bnxt_en 0000:19:00.1
 ```
 | `sudo dpdk-devbind.py -u 0000:19:00.1` 并不能恢复网卡，因为需要 `bnxt_en` 驱动
 
+
+## 测试
+
+### nping发包
+
+```bash
+sudo nping \
+  --tcp \
+  --flags syn \
+  -p 80 \
+  -S 192.168.1.100 \
+  --dest-ip 192.168.1.200 \
+  --source-mac bc:97:e1:d7:47:81 \
+  --dest-mac bc:97:e1:d7:88:51 \
+  --send-eth \
+  -e eno2np1 \
+  -c 10
+```
+> 关键是要指定 `--dest-mac bc:97:e1:d7:88:51` 和 `-e eno2np1`

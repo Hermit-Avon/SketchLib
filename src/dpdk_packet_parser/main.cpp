@@ -176,6 +176,10 @@ int main(int argc, char *argv[]){
 
     FiveTuple ft;
     CountMin<FiveTuple> cm(4, 2048);
+
+    uint64_t total_cycles = 0;
+    uint64_t total_pkts = 0;
+
     while(!force_quit){
         struct rte_mbuf *mbufs[BURST_SIZE];
         struct rte_ether_hdr *eth_hdr;
@@ -221,12 +225,21 @@ int main(int argc, char *argv[]){
             ft.dst_port = dp;
             ft.protocol = proto_id;
 
+            uint64_t start = rte_rdtsc();
             cm.update(ft, 1);
+            uint64_t end = rte_rdtsc();
+            total_cycles += (end - start);
+            total_pkts++;
         }
 
         for (uint16_t i = 0; i < num_recv; i++){
             rte_pktmbuf_free(mbufs[i]);
         }
+    }
+
+    if (total_pkts > 0) {
+        printf("\nTotal packets processed: %" PRIu64 "\n", total_pkts);
+        printf("Average CPU cycles per update: %.2f\n", (double)total_cycles / total_pkts);
     }
 
     rte_eth_dev_stop(portid);
