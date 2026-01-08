@@ -75,3 +75,4 @@ sudo nping \
   -c 1000
 ```
 > 关键是要指定 `--dest-mac bc:97:e1:d7:88:51` 和 `-e eno2np1`
+
